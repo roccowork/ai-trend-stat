@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Trending 趋势分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <h1>📈 GitHub Trending 趋势分析</h1>
+        <p>实时追踪最热门的开源项目 · 统计建模分析</p>
+    </header>
+
+    <main>
+        <!-- 加载状态 -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>正在加载数据...</p>
+        </div>
+
+        <!-- 时间范围切换 -->
+        <section id="period-selector" class="period-tabs" style="display: none;">
+            <button class="period-tab active" data-period="daily">🔥 今日热门</button>
+            <button class="period-tab" data-period="weekly">📅 本周热门</button>
+            <button class="period-tab" data-period="monthly">📆 本月热门</button>
+        </section>
+
+        <!-- 汇总卡片 -->
+        <section id="summary" class="summary-cards" style="display: none;">
+            <div class="card">
+                <h3>热门项目数</h3>
+                <p id="total-projects">-</p>
+            </div>
+            <div class="card highlight">
+                <h3>期间新增 Stars</h3>
+                <p id="total-stars-period">-</p>
+            </div>
+            <div class="card">
+                <h3>总 Stars</h3>
+                <p id="total-stars">-</p>
+            </div>
+            <div class="card">
+                <h3>语言种类</h3>
+                <p id="languages-count">-</p>
+            </div>
+        </section>
+
+        <!-- 排行榜（带评分） -->
+        <section id="rankings" style="display: none;">
+            <h2 id="ranking-title">🏆 今日 Trending 排行</h2>
+            <table id="trending-table">
+                <thead>
+                    <tr>
+                        <th>排名</th>
+                        <th>项目</th>
+                        <th>描述</th>
+                        <th>语言</th>
+                        <th>⭐ 新增</th>
+                        <th>总 Stars</th>
+                        <th>综合评分</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <!-- 统计分析卡片 -->
+        <section id="stats-analysis" class="stats-section" style="display: none;">
+            <h2>📊 统计分析</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>平均 Stars</h4>
+                    <p id="avg-stars">-</p>
+                </div>
+                <div class="stat-card">
+                    <h4>中位数 Stars</h4>
+                    <p id="median-stars">-</p>
+                </div>
+                <div class="stat-card">
+                    <h4>平均项目年龄</h4>
+                    <p id="avg-age">-</p>
+                    <span class="unit">天</span>
+                </div>
+                <div class="stat-card">
+                    <h4>近4周提交总数</h4>
+                    <p id="total-commits">-</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 图表 -->
+        <section id="charts" style="display: none;">
+            <div class="chart-container">
+                <h3>编程语言分布</h3>
+                <canvas id="language-chart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Stars 增长 Top 10</h3>
+                <canvas id="stars-chart"></canvas>
+            </div>
+        </section>
+
+        <!-- 提交趋势图表 -->
+        <section id="commit-section" class="commit-section" style="display: none;">
+            <div class="chart-container full-width">
+                <h3>📈 提交活动趋势 (最近12周)</h3>
+                <div class="trend-indicator" id="trend-indicator">
+                    <span class="trend-label">趋势:</span>
+                    <span class="trend-value" id="trend-value">-</span>
+                </div>
+                <canvas id="commit-chart"></canvas>
+            </div>
+        </section>
+
+        <!-- 数据更新时间 -->
+        <section id="update-info" class="update-info" style="display: none;">
+            <p>数据更新时间: <span id="update-time">-</span></p>
+            <p class="powered-by">Powered by statsmodels · 统计建模分析</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>数据来源: GitHub Trending | 使用 Python + statsmodels 统计建模</p>
+    </footer>
+
+    <script src="js/trending-app.js"></script>
+</body>
+</html>

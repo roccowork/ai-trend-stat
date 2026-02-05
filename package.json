@@ -1,0 +1,16 @@
+{
+  "name": "ai-trend-stat",
+  "version": "0.1.0",
+  "description": "AI 开源项目趋势分析平台",
+  "scripts": {
+    "dev": "npx wrangler pages dev public",
+    "deploy:pages": "npx wrangler pages deploy public --project-name=ai-trend-stat",
+    "deploy:worker": "npx wrangler deploy",
+    "collect": "python src/data/github_collector.py"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  },
+  "keywords": ["ai", "github", "trends", "statistics", "pyodide"],
+  "license": "MIT"
+}

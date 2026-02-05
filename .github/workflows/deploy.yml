@@ -1,0 +1,86 @@
+name: Deploy to Cloudflare
+
+on:
+  push:
+    branches:
+      - main
+  # 允许手动触发
+  workflow_dispatch:
+  # 定时任务：每天 UTC 时间 0 点和 12 点采集数据
+  schedule:
+    - cron: '0 0,12 * * *'
+
+jobs:
+  # 采集数据并分析
+  collect-and-analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install requests beautifulsoup4 pandas numpy statsmodels
+
+      - name: Collect trending data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          cd src/data
+          python trending_collector.py
+
+      - name: Run analysis
+        run: |
+          cd src/analysis
+          python trend_analyzer.py
+
+      - name: Upload data artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: trending-data
+          path: public/data/
+
+  # 部署到 Cloudflare Pages
+  deploy-pages:
+    needs: collect-and-analyze
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download data artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: trending-data
+          path: public/data/
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy public --project-name=ai-trend-stat
+
+  # 部署 Worker（可选，用于 API）
+  deploy-worker:
+    needs: collect-and-analyze
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'  # 只在 push 时部署 worker
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
