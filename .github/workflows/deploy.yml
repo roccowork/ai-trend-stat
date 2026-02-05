@@ -73,7 +73,7 @@ jobs:
   deploy-worker:
     needs: collect-and-analyze
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'  # 只在 push 时部署 worker
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
