@@ -24,6 +24,15 @@ def clean_for_json(obj: Any) -> Any:
     return obj
 
 
+def num(value: Any, default: float) -> float:
+    """取数值；缺失或 NaN（没补充到 API 详情的项目）时用默认值，避免评分变成 NaN、排序错乱"""
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return default
+    return default if math.isnan(v) or math.isinf(v) else v
+
+
 def load_pandas():
     """延迟加载 pandas"""
     import pandas as pd
@@ -65,7 +74,7 @@ class TrendingAnalyzer:
 
             # 计算项目年龄（天）
             if "created_at" in df.columns:
-                now = self.pd.Timestamp.utcnow()
+                now = self.pd.Timestamp.now("UTC")
                 df["age_days"] = (now - df["created_at"]).dt.days
 
             # 计算历史日均 Star
@@ -94,17 +103,17 @@ class TrendingAnalyzer:
             project = clean_for_json(row.to_dict())
 
             # 热度分 (0-100): 基于期间新增 Stars 排名
-            stars_period = row.get("stars_period", 0)
-            max_stars_period = df["stars_period"].max() if "stars_period" in df.columns else 1
+            stars_period = num(row.get("stars_period"), 0)
+            max_stars_period = num(df["stars_period"].max(), 1) if "stars_period" in df.columns else 1
             heat_score = (stars_period / max(max_stars_period, 1)) * 100
 
             # 活跃分 (0-100): 基于近4周提交
-            recent_commits = row.get("recent_commits_4w", 0)
-            max_commits = df["recent_commits_4w"].max() if "recent_commits_4w" in df.columns else 1
+            recent_commits = num(row.get("recent_commits_4w"), 0)
+            max_commits = num(df["recent_commits_4w"].max(), 1) if "recent_commits_4w" in df.columns else 1
             activity_score = (recent_commits / max(max_commits, 1)) * 100 if recent_commits else 50
 
             # 成长分 (0-100): 当前日增速 vs 历史日增速
-            historical_rate = row.get("historical_stars_per_day", 0)
+            historical_rate = num(row.get("historical_stars_per_day"), 0)
             period_days = {"daily": 1, "weekly": 7, "monthly": 30}.get(period, 1)
             current_rate = stars_period / period_days if stars_period else 0
 
@@ -115,8 +124,8 @@ class TrendingAnalyzer:
                 growth_score = 50
 
             # 成熟分 (0-100): 基于项目年龄和总 Stars
-            age_days = row.get("age_days", 365)
-            total_stars = row.get("stars", 0)
+            age_days = num(row.get("age_days"), 365)
+            total_stars = num(row.get("stars"), 0)
             # 成熟项目：年龄 > 180天 且 Stars > 1000
             maturity_score = min((age_days / 365) * 30 + (total_stars / 10000) * 70, 100)
 

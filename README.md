@@ -20,7 +20,8 @@ GitHub Trending 开源项目统计分析平台，基于 statsmodels 进行统计
   - 成长分 (20%): 当前增速 vs 历史增速
   - 成熟分 (10%): 项目年龄和总 Stars
 - **可视化展示**: 语言分布、Stars 增长排行、提交趋势图表
-- **自动化部署**: GitHub Actions 定时采集（每天2次），自动部署到 Cloudflare
+- **自动化部署**: GitHub Actions 定时采集（每天2次），采集、分析、部署在同一个 job 里完成
+- **每日推送**: ops-desk 的个人助理每天读取 `data/trending.json`，把今日最火 10 个和增长最快的 10 个 AI 项目推送到 Telegram
 
 ### 未来规划
 
@@ -105,7 +106,7 @@ python -m http.server 8080
 | `GH_PAT` | GitHub Personal Access Token |
 
 ### 定时任务
-- 每天 UTC 0:00 和 12:00 自动采集（北京时间 8:00 和 20:00）
+- 每天 UTC 23:00 和 11:00 自动采集（新加坡时间 07:00 和 19:00；GitHub 定时任务常推迟 1～2 小时）
 - 采集完成后自动部署到 Cloudflare Pages
 
 ## 贡献

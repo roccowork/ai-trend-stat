@@ -6,7 +6,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 
@@ -71,6 +71,8 @@ class TrendingCollector:
 
         # 找到所有项目行
         repo_list = soup.select("article.Box-row")
+        # 页面上有几个、解析出几个都打出来：数量对不上说明 GitHub 改了页面结构
+        print(f"  {since} 页面上有 {len(repo_list)} 个项目")
 
         for rank, repo in enumerate(repo_list, 1):
             try:
@@ -140,7 +142,7 @@ class TrendingCollector:
             "stars_period": stars_period,
             "period": since,
             "contributors": contributors,
-            "collected_at": datetime.utcnow().isoformat()
+            "collected_at": datetime.now(timezone.utc).isoformat()
         }
 
     def _parse_number(self, text: str) -> int:
@@ -177,7 +179,7 @@ class TrendingCollector:
             "daily": [],
             "weekly": [],
             "monthly": [],
-            "collected_at": datetime.utcnow().isoformat()
+            "collected_at": datetime.now(timezone.utc).isoformat()
         }
 
         for since in ["daily", "weekly", "monthly"]:
@@ -282,7 +284,7 @@ class TrendingCollector:
             "daily": [],
             "weekly": [],
             "monthly": [],
-            "collected_at": datetime.utcnow().isoformat()
+            "collected_at": datetime.now(timezone.utc).isoformat()
         }
 
         for since in ["daily", "weekly", "monthly"]:
@@ -316,7 +318,8 @@ if __name__ == "__main__":
         print("未配置 GITHUB_TOKEN，API 限额较低（60次/小时）")
 
     # 采集全部 trending 并补充 API 数据
-    data = collector.collect_with_stats(filter_ai=False, enrich_top_n=10)
+    # 全部补充详情（每个榜最多 25 个，带 Token 时 API 额度足够）：没补充的项目缺 topics、提交数，评分和 AI 分类都不准
+    data = collector.collect_with_stats(filter_ai=False, enrich_top_n=25)
 
     # 保存路径
     script_dir = Path(__file__).parent.resolve()

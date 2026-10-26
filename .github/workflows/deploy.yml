@@ -6,26 +6,31 @@ on:
       - main
   # 允许手动触发
   workflow_dispatch:
-  # 定时任务：每天 UTC 时间 0 点和 12 点采集数据
+  # 每天 UTC 11 点和 23 点采集（新加坡 19 点、早上 7 点）。GitHub 的定时任务常推迟 1～2 小时，
+  # 早上这次也能在新加坡 09:25 个人助理推送「GitHub 趋势日报」之前跑完
   schedule:
-    - cron: '0 0,12 * * *'
+    - cron: '0 11,23 * * *'
 
 jobs:
-  # 采集数据并分析
-  collect-and-analyze:
-    runs-on: ubuntu-latest
+  # 采集、分析、部署 Pages 放在一个 job 里：私有仓库的 Actions 按 job 向上取整计费，
+  # 拆成两个 job 每次要多算 1 分钟，还要多传一次 artifact
+  collect-and-deploy:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      deployments: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7.1.0
         with:
           python-version: '3.11'
+          cache: pip
 
       - name: Install Python dependencies
-        run: |
-          pip install requests beautifulsoup4 pandas numpy statsmodels
+        run: pip install -r requirements.txt
 
       - name: Collect trending data
         env:
@@ -39,29 +44,6 @@ jobs:
           cd src/analysis
           python trend_analyzer.py
 
-      - name: Upload data artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: trending-data
-          path: public/data/
-
-  # 部署到 Cloudflare Pages
-  deploy-pages:
-    needs: collect-and-analyze
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      deployments: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download data artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: trending-data
-          path: public/data/
-
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
@@ -69,14 +51,13 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy public --project-name=ai-trend-stat
 
-  # 部署 Worker（可选，用于 API）
+  # 部署 Worker（API）：只在代码有改动或手动触发时部署，定时采集不需要
   deploy-worker:
-    needs: collect-and-analyze
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
 
       - name: Deploy Worker
         uses: cloudflare/wrangler-action@v3
